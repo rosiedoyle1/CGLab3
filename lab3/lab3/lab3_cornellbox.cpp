@@ -76,7 +76,7 @@ struct CornellBox {
 	// Refer to original Cornell Box data 
 	// from https://www.graphics.cornell.edu/online/box/data.html
 
-	GLfloat vertex_buffer_data[60] = {
+	GLfloat vertex_buffer_data[204] = {
 		// Floor 
 		-552.8, 0.0, 0.0,   
 		0.0, 0.0,   0.0,
@@ -108,7 +108,7 @@ struct CornellBox {
 		-556.0, 548.8, -559.2
 	};
 
-	GLfloat normal_buffer_data[60] = {
+	GLfloat normal_buffer_data[204] = {
 		// Floor 
 		0.0, 1.0, 0.0,   
 		0.0, 1.0, 0.0,
@@ -140,7 +140,7 @@ struct CornellBox {
 		0.0, 0.0, 1.0
 	};
 
-	GLfloat color_buffer_data[60] = {
+	GLfloat color_buffer_data[204] = {
 		// Floor
 		1.0f, 1.0f, 1.0f,
 		1.0f, 1.0f, 1.0f,
@@ -172,7 +172,7 @@ struct CornellBox {
 		1.0f, 1.0f, 1.0f  
 	};
 
-	GLuint index_buffer_data[30] = {
+	GLuint index_buffer_data[102] = {
 		0, 1, 2, 	
 		0, 2, 3, 
 		
@@ -189,6 +189,43 @@ struct CornellBox {
 		16, 18, 19, 
 	};
 
+	void addBox(GLfloat xMin, GLfloat xMax, GLfloat yMin, GLfloat yMax,
+		GLfloat zMin, GLfloat zMax, GLuint firstVertex, GLuint firstIndex) {
+		const GLfloat faces[6][4][3] = {
+			{{xMax, yMin, zMin}, {xMax, yMax, zMin}, {xMax, yMax, zMax}, {xMax, yMin, zMax}},
+			{{xMin, yMin, zMax}, {xMin, yMax, zMax}, {xMin, yMax, zMin}, {xMin, yMin, zMin}},
+			{{xMin, yMax, zMax}, {xMax, yMax, zMax}, {xMax, yMax, zMin}, {xMin, yMax, zMin}},
+			{{xMin, yMin, zMin}, {xMax, yMin, zMin}, {xMax, yMin, zMax}, {xMin, yMin, zMax}},
+			{{xMin, yMin, zMax}, {xMax, yMin, zMax}, {xMax, yMax, zMax}, {xMin, yMax, zMax}},
+			{{xMax, yMin, zMin}, {xMin, yMin, zMin}, {xMin, yMax, zMin}, {xMax, yMax, zMin}}
+		};
+		const GLfloat faceNormals[6][3] = {
+			{1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
+			{0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
+			{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}
+		};
+
+		for (GLuint face = 0; face < 6; ++face) {
+			for (GLuint vertex = 0; vertex < 4; ++vertex) {
+				GLuint vertexIndex = firstVertex + face * 4 + vertex;
+				for (GLuint axis = 0; axis < 3; ++axis) {
+					vertex_buffer_data[vertexIndex * 3 + axis] = faces[face][vertex][axis];
+					normal_buffer_data[vertexIndex * 3 + axis] = faceNormals[face][axis];
+					color_buffer_data[vertexIndex * 3 + axis] = 1.0f;
+				}
+			}
+
+			GLuint vertexBase = firstVertex + face * 4;
+			GLuint indexBase = firstIndex + face * 6;
+			index_buffer_data[indexBase] = vertexBase;
+			index_buffer_data[indexBase + 1] = vertexBase + 1;
+			index_buffer_data[indexBase + 2] = vertexBase + 2;
+			index_buffer_data[indexBase + 3] = vertexBase;
+			index_buffer_data[indexBase + 4] = vertexBase + 2;
+			index_buffer_data[indexBase + 5] = vertexBase + 3;
+		}
+	}
+
 	// OpenGL buffers
 	GLuint vertexArrayID; 
 	GLuint vertexBufferID; 
@@ -203,6 +240,9 @@ struct CornellBox {
 	GLuint programID;
 
 	void initialize() {
+		addBox(-420.0f, -260.0f, 0.0f, 165.0f, -360.0f, -200.0f, 20, 30);
+		addBox(-220.0f, -60.0f, 0.0f, 330.0f, -440.0f, -280.0f, 44, 66);
+
 		// Create a vertex array object
 		glGenVertexArrays(1, &vertexArrayID);
 		glBindVertexArray(vertexArrayID);
@@ -268,7 +308,7 @@ struct CornellBox {
 		// Draw the box
 		glDrawElements(
 			GL_TRIANGLES,      // mode
-			30,    			   // number of indices
+			102,    		   // number of indices
 			GL_UNSIGNED_INT,   // type
 			(void*)0           // element array buffer offset
 		);

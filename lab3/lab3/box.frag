@@ -18,6 +18,11 @@ void main()
 	vec3 lightDirection = lightOffset * inversesqrt(distanceSquared);
 	float cosine = max(dot(normal, lightDirection), 0.0);
 
-	vec3 irradiance = vec3(1.0e6) * cosine / distanceSquared;
-	finalColor = color * irradiance / PI;
+	vec3 irradiance = lightIntensity * cosine / distanceSquared;
+	vec3 linearColor = color * irradiance / PI;
+
+	const float exposure = 1.0;
+	vec3 exposedColor = linearColor * exposure;
+	vec3 toneMappedColor = exposedColor / (vec3(1.0) + exposedColor);
+	finalColor = pow(toneMappedColor, vec3(1.0 / 2.2));
 }
