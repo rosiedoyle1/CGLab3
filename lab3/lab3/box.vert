@@ -21,5 +21,5 @@ void main() {
 
     // World-space geometry 
     worldPosition = vertexPosition;
-    worldNormal = vertexNormal;
+    worldNormal = normalize(vertexNormal);
 }
