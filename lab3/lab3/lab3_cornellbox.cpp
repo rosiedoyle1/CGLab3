@@ -34,11 +34,13 @@ const glm::vec3 wave600(255.0f, 190.0f, 0.0f);
 const glm::vec3 wave700(205.0f, 0.0f, 0.0f);
 static glm::vec3 lightIntensity = 5.0f * (8.0f * wave500 + 15.6f * wave600 + 18.4f * wave700);
 static glm::vec3 lightPosition(-275.0f, 500.0f, -275.0f);
-
+ 
 // Shadow mapping
 static glm::vec3 lightUp(0, 0, 1);
 static int shadowMapWidth = 0;
 static int shadowMapHeight = 0;
+static GLuint shadowFramebuffer = 0;
+static GLuint shadowDepthTexture = 0;
 
 // TODO: set these parameters 
 static float depthFoV = 0.f;
@@ -47,6 +49,44 @@ static float depthFar = 0.f;
 
 // Helper flag and function to save depth maps for debugging
 static bool saveDepth = false;
+
+static bool initializeShadowFramebuffer() {
+	if (shadowMapWidth <= 0 || shadowMapHeight <= 0) {
+		std::cerr << "Invalid shadow map dimensions." << std::endl;
+		return false;
+	}
+
+	glGenFramebuffers(1, &shadowFramebuffer);
+	glGenTextures(1, &shadowDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, shadowDepthTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, shadowMapWidth, shadowMapHeight,
+		0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowFramebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+		shadowDepthTexture, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	if (status != GL_FRAMEBUFFER_COMPLETE) {
+		std::cerr << "Shadow framebuffer is incomplete (status 0x"
+			<< std::hex << status << std::dec << ")." << std::endl;
+		glDeleteFramebuffers(1, &shadowFramebuffer);
+		glDeleteTextures(1, &shadowDepthTexture);
+		shadowFramebuffer = 0;
+		shadowDepthTexture = 0;
+		return false;
+	}
+
+	return true;
+}
 
 // This function retrieves and stores the depth map of the default frame buffer 
 // or a particular frame buffer (indicated by FBO ID) to a PNG image.
@@ -368,6 +408,11 @@ int main(void)
 
 	// Prepare shadow map size for shadow mapping. Usually this is the size of the window itself, but on some platforms like Mac this can be 2x the size of the window. Use glfwGetFramebufferSize to get the shadow map size properly. 
     glfwGetFramebufferSize(window, &shadowMapWidth, &shadowMapHeight);
+	if (!initializeShadowFramebuffer()) {
+		glfwDestroyWindow(window);
+		glfwTerminate();
+		return -1;
+	}
 
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
@@ -408,6 +453,8 @@ int main(void)
 
 	// Clean up
 	b.cleanup();
+	glDeleteFramebuffers(1, &shadowFramebuffer);
+	glDeleteTextures(1, &shadowDepthTexture);
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
