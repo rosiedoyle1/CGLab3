@@ -33,7 +33,7 @@ const glm::vec3 wave500(0.0f, 255.0f, 146.0f);
 const glm::vec3 wave600(255.0f, 190.0f, 0.0f);
 const glm::vec3 wave700(205.0f, 0.0f, 0.0f);
 static glm::vec3 lightIntensity = 5.0f * (8.0f * wave500 + 15.6f * wave600 + 18.4f * wave700);
-static glm::vec3 lightPosition(-275.0f, 500.0f, -275.0f);
+static glm::vec3 lightPosition(-278.0f, 540.0f, -100.0f);
  
 // Shadow mapping
 static glm::vec3 lightUp(0, 0, 1);
@@ -43,7 +43,7 @@ static GLuint shadowFramebuffer = 0;
 static GLuint shadowDepthTexture = 0;
 
 static float depthFoV = 90.0f;
-static float depthNear = 10.0f;
+static float depthNear = 10.0f;   
 static float depthFar = 1500.0f;
 
 // Helper flag and function to save depth maps for debugging
@@ -283,8 +283,8 @@ struct CornellBox {
 	GLuint depthMvpMatrixID;
 
 	void initialize() {
-		addBox(-420.0f, -260.0f, 0.0f, 165.0f, -360.0f, -200.0f, 20, 30);
-		addBox(-220.0f, -60.0f, 0.0f, 330.0f, -440.0f, -280.0f, 44, 66);
+		addBox(-420.0f, -260.0f, 0.0f, 330.0f, -360.0f, -200.0f, 20, 30);
+		addBox(-220.0f, -60.0f, 0.0f, 165.0f, -220.0f, -60.0f, 44, 66);
 
 		// Create a vertex array object
 		glGenVertexArrays(1, &vertexArrayID);
@@ -470,7 +470,10 @@ int main(void)
 		glBindFramebuffer(GL_FRAMEBUFFER, shadowFramebuffer);
 		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
 		glClear(GL_DEPTH_BUFFER_BIT);
+
+		glCullFace(GL_FRONT);
 		b.renderDepth(lightSpaceMatrix);
+		glCullFace(GL_BACK);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
@@ -511,7 +514,7 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 	if (key == GLFW_KEY_R && action == GLFW_PRESS)
 	{
 		eye_center = glm::vec3(-278.0f, 273.0f, 800.0f);
-		lightPosition = glm::vec3(-275.0f, 500.0f, -275.0f);
+		lightPosition = glm::vec3(-278.0f, 540.0f, -100.0f);
 
 	}
 
