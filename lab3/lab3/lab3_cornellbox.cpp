@@ -43,7 +43,7 @@ static GLuint shadowFramebuffer = 0;
 static GLuint shadowDepthTexture = 0;
 
 static float depthFoV = 90.0f;
-static float depthNear = 1.0f;
+static float depthNear = 10.0f;
 static float depthFar = 1500.0f;
 
 // Helper flag and function to save depth maps for debugging
@@ -274,8 +274,10 @@ struct CornellBox {
 
 	// Shader variable IDs
 	GLuint mvpMatrixID;
+	GLuint lightSpaceMatrixID;
 	GLuint lightPositionID;
 	GLuint lightIntensityID;
+	GLuint shadowMapID;
 	GLuint programID;
 	GLuint depthProgramID;
 	GLuint depthMvpMatrixID;
@@ -322,8 +324,10 @@ struct CornellBox {
 
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(programID, "MVP");
+		lightSpaceMatrixID = glGetUniformLocation(programID, "lightSpaceMatrix");
 		lightPositionID = glGetUniformLocation(programID, "lightPosition");
 		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
+		shadowMapID = glGetUniformLocation(programID, "shadowMap");
 		depthMvpMatrixID = glGetUniformLocation(depthProgramID, "MVP");
 	}
 
@@ -341,7 +345,7 @@ struct CornellBox {
 		glDisableVertexAttribArray(0);
 	}
 
-	void render(glm::mat4 cameraMatrix) {
+	void render(glm::mat4 cameraMatrix, glm::mat4 lightSpaceMatrix) {
 		glUseProgram(programID);
 		glBindVertexArray(vertexArrayID);
 
@@ -362,10 +366,14 @@ struct CornellBox {
 		// Set model-view-projection matrix
 		glm::mat4 mvp = cameraMatrix;
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(lightSpaceMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 
 		// Set light data 
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
 		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, shadowDepthTexture);
+		glUniform1i(shadowMapID, 0);
 
 		// Draw the box
 		glDrawElements(
@@ -471,7 +479,7 @@ int main(void)
 		viewMatrix = glm::lookAt(eye_center, lookat, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
-		b.render(vp);
+		b.render(vp, lightSpaceMatrix);
 
 		if (saveDepth) {
             std::string filename = "depth_camera.png";
