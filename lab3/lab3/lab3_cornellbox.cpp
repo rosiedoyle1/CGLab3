@@ -42,10 +42,9 @@ static int shadowMapHeight = 0;
 static GLuint shadowFramebuffer = 0;
 static GLuint shadowDepthTexture = 0;
 
-// TODO: set these parameters 
-static float depthFoV = 0.f;
-static float depthNear = 0.f;
-static float depthFar = 0.f; 
+static float depthFoV = 90.0f;
+static float depthNear = 1.0f;
+static float depthFar = 1500.0f;
 
 // Helper flag and function to save depth maps for debugging
 static bool saveDepth = false;
@@ -278,6 +277,8 @@ struct CornellBox {
 	GLuint lightPositionID;
 	GLuint lightIntensityID;
 	GLuint programID;
+	GLuint depthProgramID;
+	GLuint depthMvpMatrixID;
 
 	void initialize() {
 		addBox(-420.0f, -260.0f, 0.0f, 165.0f, -360.0f, -200.0f, 20, 30);
@@ -313,15 +314,36 @@ struct CornellBox {
 		{
 			std::cerr << "Failed to load shaders." << std::endl;
 		}
+		depthProgramID = LoadShadersFromFile("../lab3/depth.vert", "../lab3/depth.frag");
+		if (depthProgramID == 0)
+		{
+			std::cerr << "Failed to load depth shaders." << std::endl;
+		}
 
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(programID, "MVP");
 		lightPositionID = glGetUniformLocation(programID, "lightPosition");
 		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
+		depthMvpMatrixID = glGetUniformLocation(depthProgramID, "MVP");
+	}
+
+	void renderDepth(glm::mat4 lightSpaceMatrix) {
+		glUseProgram(depthProgramID);
+		glBindVertexArray(vertexArrayID);
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+		glUniformMatrix4fv(depthMvpMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+		glDrawElements(GL_TRIANGLES, 102, GL_UNSIGNED_INT, (void*)0);
+		glDisableVertexAttribArray(0);
 	}
 
 	void render(glm::mat4 cameraMatrix) {
 		glUseProgram(programID);
+		glBindVertexArray(vertexArrayID);
 
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
@@ -365,6 +387,7 @@ struct CornellBox {
 		glDeleteBuffers(1, &normalBufferID);
 		glDeleteVertexArrays(1, &vertexArrayID);
 		glDeleteProgram(programID);
+		glDeleteProgram(depthProgramID);
 	}
 }; 
 
@@ -430,6 +453,19 @@ int main(void)
 
 	do
 	{
+		glm::vec3 lightTarget(lightPosition.x, 0.0f, lightPosition.z);
+		glm::mat4 lightView = glm::lookAt(lightPosition, lightTarget, lightUp);
+		glm::mat4 lightProjection = glm::perspective(glm::radians(depthFoV),
+			static_cast<float>(shadowMapWidth) / shadowMapHeight, depthNear, depthFar);
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowFramebuffer);
+		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		b.renderDepth(lightSpaceMatrix);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		viewMatrix = glm::lookAt(eye_center, lookat, up);
