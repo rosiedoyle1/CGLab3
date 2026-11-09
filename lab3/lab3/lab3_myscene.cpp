@@ -18,6 +18,7 @@ const glm::vec3 lightPosition(-105.0f, 128.0f, -25.0f);
 const glm::vec3 lightIntensity(24000.0f, 19500.0f, 14000.0f);
 const glm::vec3 cameraTarget(0.0f, -50.0f, 0.0f);
 glm::vec3 cameraPosition(650.0f, 500.0f, 850.0f);
+//cam orbit state
 float cameraYaw = 0.0f;
 float cameraPitch = 0.0f;
 float cameraDistance = 0.0f;
@@ -25,6 +26,7 @@ bool rotatingCamera = false;
 double previousMouseX = 0.0;
 double previousMouseY = 0.0;
 
+//recalc cam pos from orbit angles
 void updateCameraPosition() {
 	cameraPosition = cameraTarget + cameraDistance * glm::vec3(
 		std::cos(cameraPitch) * std::cos(cameraYaw),
@@ -35,11 +37,13 @@ void updateCameraPosition() {
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int) {
 	if (button != GLFW_MOUSE_BUTTON_LEFT) return;
 	rotatingCamera = action == GLFW_PRESS;
+	//store cursor pos when orbit starts
 	if (rotatingCamera) {
 		glfwGetCursorPos(window, &previousMouseX, &previousMouseY);
 	}
 }
 
+//update orbit angles while dragging
 void cursorPositionCallback(GLFWwindow*, double x, double y) {
 	if (!rotatingCamera) return;
 	const float sensitivity = 0.005f;
@@ -52,6 +56,7 @@ void cursorPositionCallback(GLFWwindow*, double x, double y) {
 	updateCameraPosition();
 }
 
+//handle exit and cam reset keys
 void keyCallback(GLFWwindow* window, int key, int, int action, int) {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, 1);
@@ -71,6 +76,7 @@ struct SceneMesh {
 	std::vector<GLfloat> normals;
 	std::vector<GLfloat> textureCoordinates;
 
+	//append vertex attrs for one triangle
 	void addTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 color,
 		bool useWoodTexture = false) {
 		glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
@@ -86,6 +92,7 @@ struct SceneMesh {
 			normals.push_back(normal.y);
 			normals.push_back(normal.z);
 
+			//choose planar UV axes from face normal
 			if (std::fabs(normal.y) > 0.5f) {
 				textureCoordinates.push_back(vertices[i].x / 200.0f);
 				textureCoordinates.push_back(vertices[i].z / 200.0f);
@@ -102,12 +109,14 @@ struct SceneMesh {
 		}
 	}
 
+	//split quad into two triangles
 	void addQuad(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d,
 		glm::vec3 color, bool useWoodTexture = false) {
 		addTriangle(a, b, c, color, useWoodTexture);
 		addTriangle(a, c, d, color, useWoodTexture);
 	}
 
+	//build a box from six quads
 	void addCuboid(glm::vec3 minimum, glm::vec3 maximum, glm::vec3 color,
 		bool useWoodTexture = false) {
 		const float x0 = minimum.x, y0 = minimum.y, z0 = minimum.z;
@@ -120,6 +129,7 @@ struct SceneMesh {
 		addQuad({x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}, color, useWoodTexture);
 	}
 
+	//create a segmented cylinder along an axis
 	void addCylinder(glm::vec3 start, glm::vec3 end, float radius, glm::vec3 color, int segments = 20) {
 		glm::vec3 axis = glm::normalize(end - start);
 		glm::vec3 reference = std::fabs(axis.y) < 0.9f
@@ -139,6 +149,7 @@ struct SceneMesh {
 		}
 	}
 
+	//create a tapered shade from ring segments
 	void addLampShade(glm::vec3 top, glm::vec3 bottom, float topRadius,
 		float bottomRadius, glm::vec3 color, int segments = 24) {
 		glm::vec3 axis = glm::normalize(bottom - top);
@@ -156,6 +167,7 @@ struct SceneMesh {
 		}
 	}
 
+	//add a page with writing
 	void addBookPage(float xOuter, float xHinge, float outerY, float hingeY,
 		float zFront, float zBack, glm::vec3 color) {
 		addQuad({xOuter, outerY, zFront}, {xOuter, outerY, zBack},
@@ -177,6 +189,7 @@ struct SceneMesh {
 		}
 	}
 
+	//assemble all elements
 	void build() {
 		const glm::vec3 tabletop(0.34f, 0.19f, 0.10f);
 		const glm::vec3 legColor(0.22f, 0.12f, 0.07f);
@@ -237,6 +250,7 @@ struct SceneRenderer {
 	int shadowHeight = 0;
 
 	bool initialize(const SceneMesh& mesh) {
+		//load lit and depth shader programs
 		litProgram = LoadShadersFromFile("../lab3/myscene.vert", "../lab3/myscene.frag");
 		depthProgram = LoadShadersFromFile("../lab3/depth.vert", "../lab3/depth.frag");
 		if (!litProgram || !depthProgram) {
@@ -253,6 +267,7 @@ struct SceneRenderer {
 		woodTextureID = glGetUniformLocation(litProgram, "woodTexture");
 		depthMatrixID = glGetUniformLocation(depthProgram, "MVP");
 
+		//upload mesh attrs to GPU buffers
 		glGenVertexArrays(1, &vertexArray);
 		glBindVertexArray(vertexArray);
 		glGenBuffers(1, &positionBuffer);
@@ -272,6 +287,7 @@ struct SceneRenderer {
 		glBufferData(GL_ARRAY_BUFFER, mesh.textureCoordinates.size() * sizeof(GLfloat),
 			mesh.textureCoordinates.data(), GL_STATIC_DRAW);
 
+		//generate a repeating grayscale wood-grain image
 		std::vector<unsigned char> woodPixels(256 * 256 * 3);
 		for (int y = 0; y < 256; ++y) {
 			for (int x = 0; x < 256; ++x) {
@@ -294,6 +310,7 @@ struct SceneRenderer {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
+		//create depth texture target for shadow mapping
 		glGenFramebuffers(1, &shadowFramebuffer);
 		glGenTextures(1, &shadowTexture);
 		glBindTexture(GL_TEXTURE_2D, shadowTexture);
@@ -321,6 +338,7 @@ struct SceneRenderer {
 		return true;
 	}
 
+	//bind a 3-float vertex attr buffer
 	void bindAttribute(GLuint index, GLuint buffer) {
 		glEnableVertexAttribArray(index);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -331,6 +349,7 @@ struct SceneRenderer {
 		return static_cast<GLsizei>(mesh.positions.size() / 3);
 	}
 
+	//render scene depth from light view
 	void renderDepth(const SceneMesh& mesh, const glm::mat4& lightMatrix) {
 		glUseProgram(depthProgram);
 		glBindVertexArray(vertexArray);
@@ -340,6 +359,7 @@ struct SceneRenderer {
 		glDisableVertexAttribArray(0);
 	}
 
+	//render textured scene with direct light and shadows
 	void render(const SceneMesh& mesh, const glm::mat4& cameraMatrix,
 		const glm::mat4& lightMatrix) {
 		glUseProgram(litProgram);
@@ -366,6 +386,7 @@ struct SceneRenderer {
 		glDisableVertexAttribArray(3);
 	}
 
+	//release GPU resources
 	void cleanup() {
 		glDeleteBuffers(1, &positionBuffer);
 		glDeleteBuffers(1, &colorBuffer);
@@ -383,6 +404,7 @@ struct SceneRenderer {
 } // namespace
 
 int main() {
+	//init GLFW and create OpenGL window
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW." << std::endl;
 		return -1;
@@ -405,6 +427,7 @@ int main() {
 		return -1;
 	}
 
+	//build scene mesh and init GPU renderer
 	SceneMesh scene;
 	scene.build();
 	SceneRenderer renderer;
@@ -420,6 +443,7 @@ int main() {
 	glDisable(GL_CULL_FACE);
 	glClearColor(0.12f, 0.13f, 0.16f, 1.0f);
 
+	//derive orbit parameters from initial cam position
 	glm::vec3 initialOffset = cameraPosition - cameraTarget;
 	cameraDistance = glm::length(initialOffset);
 	cameraYaw = std::atan2(initialOffset.z, initialOffset.x);
@@ -435,9 +459,11 @@ int main() {
 		static_cast<float>(renderer.shadowWidth) / renderer.shadowHeight, 10.0f, 1500.0f);
 	const glm::mat4 lightMatrix = lightProjection * lightView;
 
+	//draw shadow map, then render the lit camera view
 	while (!glfwWindowShouldClose(window)) {
 		glm::mat4 view = glm::lookAt(cameraPosition, cameraTarget,
 			glm::vec3(0.0f, 1.0f, 0.0f));
+		//depth pass from light POV
 		glBindFramebuffer(GL_FRAMEBUFFER, renderer.shadowFramebuffer);
 		glViewport(0, 0, renderer.shadowWidth, renderer.shadowHeight);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -446,6 +472,7 @@ int main() {
 		renderer.renderDepth(scene, lightMatrix);
 		glDisable(GL_POLYGON_OFFSET_FILL);
 
+		//camera pass samples shadow map
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, renderer.shadowWidth, renderer.shadowHeight);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

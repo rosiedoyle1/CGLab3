@@ -50,11 +50,13 @@ static float depthFar = 1500.0f;
 static bool saveDepth = false;
 
 static bool initializeShadowFramebuffer() {
+	//valid framebuffer size for depth texture
 	if (shadowMapWidth <= 0 || shadowMapHeight <= 0) {
 		std::cerr << "Invalid shadow map dimensions." << std::endl;
 		return false;
 	}
 
+	//allocate a depth texture
 	glGenFramebuffers(1, &shadowFramebuffer);
 	glGenTextures(1, &shadowDepthTexture);
 	glBindTexture(GL_TEXTURE_2D, shadowDepthTexture);
@@ -65,12 +67,14 @@ static bool initializeShadowFramebuffer() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	//attach texture to framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowFramebuffer);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
 		shadowDepthTexture, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 
+	// verify framebuffer is usable
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -230,6 +234,7 @@ struct CornellBox {
 
 	void addBox(GLfloat xMin, GLfloat xMax, GLfloat yMin, GLfloat yMax,
 		GLfloat zMin, GLfloat zMax, GLuint firstVertex, GLuint firstIndex) {
+		//define corners for box faces
 		const GLfloat faces[6][4][3] = {
 			{{xMax, yMin, zMin}, {xMax, yMax, zMin}, {xMax, yMax, zMax}, {xMax, yMin, zMax}},
 			{{xMin, yMin, zMax}, {xMin, yMax, zMax}, {xMin, yMax, zMin}, {xMin, yMin, zMin}},
@@ -238,12 +243,14 @@ struct CornellBox {
 			{{xMin, yMin, zMax}, {xMax, yMin, zMax}, {xMax, yMax, zMax}, {xMin, yMax, zMax}},
 			{{xMax, yMin, zMin}, {xMin, yMin, zMin}, {xMin, yMax, zMin}, {xMax, yMax, zMin}}
 		};
+		//outward-facing normal to each face
 		const GLfloat faceNormals[6][3] = {
 			{1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
 			{0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
 			{0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}
 		};
 
+		//face positions, normals, and color
 		for (GLuint face = 0; face < 6; ++face) {
 			for (GLuint vertex = 0; vertex < 4; ++vertex) {
 				GLuint vertexIndex = firstVertex + face * 4 + vertex;
@@ -254,6 +261,7 @@ struct CornellBox {
 				}
 			}
 
+			// split into two triangles
 			GLuint vertexBase = firstVertex + face * 4;
 			GLuint indexBase = firstIndex + face * 6;
 			index_buffer_data[indexBase] = vertexBase;
@@ -332,14 +340,17 @@ struct CornellBox {
 	}
 
 	void renderDepth(glm::mat4 lightSpaceMatrix) {
+		//depth shader & vertex array
 		glUseProgram(depthProgramID);
 		glBindVertexArray(vertexArrayID);
 
+		//vertex positions for depth shader
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
+		// transform scene from light's pov & write depth
 		glUniformMatrix4fv(depthMvpMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 		glDrawElements(GL_TRIANGLES, 102, GL_UNSIGNED_INT, (void*)0);
 		glDisableVertexAttribArray(0);
