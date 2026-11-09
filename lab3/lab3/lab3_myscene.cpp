@@ -69,8 +69,10 @@ struct SceneMesh {
 	std::vector<GLfloat> positions;
 	std::vector<GLfloat> colors;
 	std::vector<GLfloat> normals;
+	std::vector<GLfloat> textureCoordinates;
 
-	void addTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 color) {
+	void addTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 color,
+		bool useWoodTexture = false) {
 		glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
 		const glm::vec3 vertices[] = { a, b, c };
 		for (int i = 0; i < 3; ++i) {
@@ -83,23 +85,39 @@ struct SceneMesh {
 			normals.push_back(normal.x);
 			normals.push_back(normal.y);
 			normals.push_back(normal.z);
+
+			if (std::fabs(normal.y) > 0.5f) {
+				textureCoordinates.push_back(vertices[i].x / 200.0f);
+				textureCoordinates.push_back(vertices[i].z / 200.0f);
+			}
+			else if (std::fabs(normal.x) > 0.5f) {
+				textureCoordinates.push_back(vertices[i].z / 200.0f);
+				textureCoordinates.push_back(vertices[i].y / 200.0f);
+			}
+			else {
+				textureCoordinates.push_back(vertices[i].x / 200.0f);
+				textureCoordinates.push_back(vertices[i].y / 200.0f);
+			}
+			textureCoordinates.push_back(useWoodTexture ? 1.0f : 0.0f);
 		}
 	}
 
-	void addQuad(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d, glm::vec3 color) {
-		addTriangle(a, b, c, color);
-		addTriangle(a, c, d, color);
+	void addQuad(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 d,
+		glm::vec3 color, bool useWoodTexture = false) {
+		addTriangle(a, b, c, color, useWoodTexture);
+		addTriangle(a, c, d, color, useWoodTexture);
 	}
 
-	void addCuboid(glm::vec3 minimum, glm::vec3 maximum, glm::vec3 color) {
+	void addCuboid(glm::vec3 minimum, glm::vec3 maximum, glm::vec3 color,
+		bool useWoodTexture = false) {
 		const float x0 = minimum.x, y0 = minimum.y, z0 = minimum.z;
 		const float x1 = maximum.x, y1 = maximum.y, z1 = maximum.z;
-		addQuad({x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}, {x1, y0, z1}, color);
-		addQuad({x0, y0, z1}, {x0, y1, z1}, {x0, y1, z0}, {x0, y0, z0}, color);
-		addQuad({x0, y1, z1}, {x1, y1, z1}, {x1, y1, z0}, {x0, y1, z0}, color);
-		addQuad({x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}, color);
-		addQuad({x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}, color);
-		addQuad({x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}, color);
+		addQuad({x1, y0, z0}, {x1, y1, z0}, {x1, y1, z1}, {x1, y0, z1}, color, useWoodTexture);
+		addQuad({x0, y0, z1}, {x0, y1, z1}, {x0, y1, z0}, {x0, y0, z0}, color, useWoodTexture);
+		addQuad({x0, y1, z1}, {x1, y1, z1}, {x1, y1, z0}, {x0, y1, z0}, color, useWoodTexture);
+		addQuad({x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}, color, useWoodTexture);
+		addQuad({x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}, color, useWoodTexture);
+		addQuad({x1, y0, z0}, {x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}, color, useWoodTexture);
 	}
 
 	void addCylinder(glm::vec3 start, glm::vec3 end, float radius, glm::vec3 color, int segments = 20) {
@@ -164,11 +182,11 @@ struct SceneMesh {
 		const glm::vec3 legColor(0.22f, 0.12f, 0.07f);
 		const glm::vec3 metal(0.12f, 0.13f, 0.14f);
 
-		addCuboid({-360.0f, 0.0f, -220.0f}, {360.0f, 24.0f, 220.0f}, tabletop);
-		addCuboid({-330.0f, -370.0f, -195.0f}, {-290.0f, 0.0f, -155.0f}, legColor);
-		addCuboid({290.0f, -370.0f, -195.0f}, {330.0f, 0.0f, -155.0f}, legColor);
-		addCuboid({-330.0f, -370.0f, 155.0f}, {-290.0f, 0.0f, 195.0f}, legColor);
-		addCuboid({290.0f, -370.0f, 155.0f}, {330.0f, 0.0f, 195.0f}, legColor);
+		addCuboid({-360.0f, 0.0f, -220.0f}, {360.0f, 24.0f, 220.0f}, tabletop, true);
+		addCuboid({-330.0f, -370.0f, -195.0f}, {-290.0f, 0.0f, -155.0f}, legColor, true);
+		addCuboid({290.0f, -370.0f, -195.0f}, {330.0f, 0.0f, -155.0f}, legColor, true);
+		addCuboid({-330.0f, -370.0f, 155.0f}, {-290.0f, 0.0f, 195.0f}, legColor, true);
+		addCuboid({290.0f, -370.0f, 155.0f}, {330.0f, 0.0f, 195.0f}, legColor, true);
 
 		addCuboid({-1000.0f, -371.0f, -520.0f}, {1000.0f, -370.0f, 1000.0f},
 			glm::vec3(0.24f, 0.22f, 0.19f));
@@ -201,6 +219,8 @@ struct SceneRenderer {
 	GLuint positionBuffer = 0;
 	GLuint colorBuffer = 0;
 	GLuint normalBuffer = 0;
+	GLuint textureCoordinateBuffer = 0;
+	GLuint woodTexture = 0;
 	GLuint litProgram = 0;
 	GLuint depthProgram = 0;
 	GLuint cameraMatrixID = 0;
@@ -209,6 +229,7 @@ struct SceneRenderer {
 	GLuint lightIntensityID = 0;
 	GLuint ambientIntensityID = 0;
 	GLuint shadowMapID = 0;
+	GLuint woodTextureID = 0;
 	GLuint depthMatrixID = 0;
 	GLuint shadowFramebuffer = 0;
 	GLuint shadowTexture = 0;
@@ -216,7 +237,7 @@ struct SceneRenderer {
 	int shadowHeight = 0;
 
 	bool initialize(const SceneMesh& mesh) {
-		litProgram = LoadShadersFromFile("../lab3/box.vert", "../lab3/box.frag");
+		litProgram = LoadShadersFromFile("../lab3/myscene.vert", "../lab3/myscene.frag");
 		depthProgram = LoadShadersFromFile("../lab3/depth.vert", "../lab3/depth.frag");
 		if (!litProgram || !depthProgram) {
 			std::cerr << "Failed to load scene shaders." << std::endl;
@@ -229,6 +250,7 @@ struct SceneRenderer {
 		lightIntensityID = glGetUniformLocation(litProgram, "lightIntensity");
 		ambientIntensityID = glGetUniformLocation(litProgram, "ambientIntensity");
 		shadowMapID = glGetUniformLocation(litProgram, "shadowMap");
+		woodTextureID = glGetUniformLocation(litProgram, "woodTexture");
 		depthMatrixID = glGetUniformLocation(depthProgram, "MVP");
 
 		glGenVertexArrays(1, &vertexArray);
@@ -245,6 +267,32 @@ struct SceneRenderer {
 		glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 		glBufferData(GL_ARRAY_BUFFER, mesh.normals.size() * sizeof(GLfloat),
 			mesh.normals.data(), GL_STATIC_DRAW);
+		glGenBuffers(1, &textureCoordinateBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, textureCoordinateBuffer);
+		glBufferData(GL_ARRAY_BUFFER, mesh.textureCoordinates.size() * sizeof(GLfloat),
+			mesh.textureCoordinates.data(), GL_STATIC_DRAW);
+
+		std::vector<unsigned char> woodPixels(256 * 256 * 3);
+		for (int y = 0; y < 256; ++y) {
+			for (int x = 0; x < 256; ++x) {
+				float grain = 0.875f + 0.12f * std::sin(
+					2.0f * pi * y / 16.0f + 0.7f * std::sin(2.0f * pi * x / 96.0f));
+				unsigned char value = static_cast<unsigned char>(255.0f * grain);
+				std::size_t offset = static_cast<std::size_t>((y * 256 + x) * 3);
+				woodPixels[offset] = value;
+				woodPixels[offset + 1] = value;
+				woodPixels[offset + 2] = value;
+			}
+		}
+		glGenTextures(1, &woodTexture);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 256, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, woodPixels.data());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 		glGenFramebuffers(1, &shadowFramebuffer);
 		glGenTextures(1, &shadowTexture);
@@ -299,6 +347,7 @@ struct SceneRenderer {
 		bindAttribute(0, positionBuffer);
 		bindAttribute(1, colorBuffer);
 		bindAttribute(2, normalBuffer);
+		bindAttribute(3, textureCoordinateBuffer);
 		glUniformMatrix4fv(cameraMatrixID, 1, GL_FALSE, &cameraMatrix[0][0]);
 		glUniformMatrix4fv(lightSpaceMatrixID, 1, GL_FALSE, &lightMatrix[0][0]);
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
@@ -307,21 +356,27 @@ struct SceneRenderer {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, shadowTexture);
 		glUniform1i(shadowMapID, 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+		glUniform1i(woodTextureID, 1);
 		glDrawArrays(GL_TRIANGLES, 0, vertexCount(mesh));
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
+		glDisableVertexAttribArray(3);
 	}
 
 	void cleanup() {
 		glDeleteBuffers(1, &positionBuffer);
 		glDeleteBuffers(1, &colorBuffer);
 		glDeleteBuffers(1, &normalBuffer);
+		glDeleteBuffers(1, &textureCoordinateBuffer);
 		glDeleteVertexArrays(1, &vertexArray);
 		glDeleteProgram(litProgram);
 		glDeleteProgram(depthProgram);
 		glDeleteFramebuffers(1, &shadowFramebuffer);
 		glDeleteTextures(1, &shadowTexture);
+		glDeleteTextures(1, &woodTexture);
 	}
 };
 
