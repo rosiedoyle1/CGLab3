@@ -186,6 +186,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{2BE586F4-63F8-3203-B5EC-8D7527D12620}</Project>
       <Name>lab3_cornellbox</Name>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\rosem\OneDrive\Documents\ComputerGraphics\Labs\lab3\CGLab3\lab3\build\lab3_myscene.vcxproj">
+      <Project>{4E9A4DA2-4EC5-3156-B0A8-5D56FF1C12BB}</Project>
+      <Name>lab3_myscene</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

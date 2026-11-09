@@ -15,12 +15,18 @@
 		<BuildDependency Project="external/glad-3.3/glad.vcxproj"/>
 		<BuildDependency Project="external/glfw-3.1.2/src/glfw.vcxproj"/>
 	</Project>
+	<Project Path="lab3_myscene.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4e9a4da2-4ec5-3156-b0a8-5d56ff1c12bb">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/glad-3.3/glad.vcxproj"/>
+		<BuildDependency Project="external/glfw-3.1.2/src/glfw.vcxproj"/>
+	</Project>
 	<Folder Name="/CMakePredefinedTargets/">
 		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="77c420e7-52b9-36cb-a7a1-a0c15100be10" DefaultStartup="true">
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 			<BuildDependency Project="external/glad-3.3/glad.vcxproj"/>
 			<BuildDependency Project="external/glfw-3.1.2/src/glfw.vcxproj"/>
 			<BuildDependency Project="lab3_cornellbox.vcxproj"/>
+			<BuildDependency Project="lab3_myscene.vcxproj"/>
 			<Build Solution="Debug|*" Project="false"/>
 			<Build Solution="Release|*" Project="false"/>
 			<Build Solution="MinSizeRel|*" Project="false"/>

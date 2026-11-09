@@ -1,0 +1,10 @@
+^C:\USERS\ROSEM\ONEDRIVE\DOCUMENTS\COMPUTERGRAPHICS\LABS\LAB3\CGLAB3\LAB3\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3 -BC:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build --check-stamp-file C:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

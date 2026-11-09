@@ -25,3 +25,13 @@ target_link_libraries(lab3_cornellbox
 	glfw
 	glad
 )
+
+add_executable(lab3_myscene
+	lab3/lab3_myscene.cpp
+	lab3/render/shader.cpp
+)
+target_link_libraries(lab3_myscene
+	${OPENGL_LIBRARY}
+	glfw
+	glad
+)

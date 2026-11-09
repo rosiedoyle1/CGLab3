@@ -1,4 +1,5 @@
 C:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build/CMakeFiles/lab3_cornellbox.dir
+C:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build/CMakeFiles/lab3_myscene.dir
 C:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build/CMakeFiles/ALL_BUILD.dir
 C:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build/CMakeFiles/ZERO_CHECK.dir
 C:/Users/rosem/OneDrive/Documents/ComputerGraphics/Labs/lab3/CGLab3/lab3/build/external/glad-3.3/CMakeFiles/glad.dir
